@@ -21,12 +21,15 @@ async def on_start(event: BotStarted):
     }
     await event.bot.send_message(
         chat_id=event.chat_id,
-        text="Привет! Я бот для бронирования авто. Нажми кнопку, чтобы начать.",
+        text="Привет! Я бот для бронирования авто. Нажми кнопку.",
         extra={"attachments": [keyboard]}
     )
 
 @dp.message_created()
-async def start_cmd(event: MessageCreated):
+async def handle_message(event: MessageCreated):
+    uid = event.from_user.id
+    
+    # Обработка команды /start
     if event.message.text == "/start":
         keyboard = {
             "inline_keyboard": [[{
@@ -38,27 +41,26 @@ async def start_cmd(event: MessageCreated):
             "Добро пожаловать! Нажмите кнопку для бронирования.",
             extra={"attachments": [keyboard]}
         )
-
-@dp.callback_query_handler(lambda c: c.data == "book_car")
-async def book_car(callback):
-    user_data[callback.from_user.id] = {"step": "name"}
-    await callback.message.edit_text("Введите ваше ФИО:")
-
-@dp.message_created()
-async def get_info(event: MessageCreated):
-    uid = event.from_user.id
-    if uid not in user_data:
         return
     
-    step = user_data[uid].get("step")
-    if step == "name":
-        user_data[uid]["name"] = event.message.text
-        user_data[uid]["step"] = "phone"
-        await event.message.answer("Введите номер телефона:")
-    elif step == "phone":
-        user_data[uid]["phone"] = event.message.text
-        await event.message.answer("✅ Заявка принята! Менеджер свяжется с вами.")
-        del user_data[uid]
+    # Если пользователь в процессе бронирования
+    if uid in user_data:
+        step = user_data[uid].get("step")
+        if step == "name":
+            user_data[uid]["name"] = event.message.text
+            user_data[uid]["step"] = "phone"
+            await event.message.answer("Введите номер телефона:")
+        elif step == "phone":
+            user_data[uid]["phone"] = event.message.text
+            await event.message.answer("✅ Заявка принята! Менеджер свяжется с вами.")
+            del user_data[uid]
+
+# Обработка нажатий на кнопки
+@dp.callback_query_handler()
+async def handle_callback(callback):
+    if callback.data == "book_car":
+        user_data[callback.from_user.id] = {"step": "name"}
+        await callback.message.edit_text("Введите ваше ФИО:")
 
 async def main():
     await dp.start_polling(bot)
