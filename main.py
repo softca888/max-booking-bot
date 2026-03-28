@@ -60,7 +60,6 @@ async def get_info(event: MessageCreated):
         await event.message.answer("✅ Заявка принята! Менеджер свяжется с вами.")
         del user_data[uid]
 
-# Запуск через polling (без вебхука)
 async def main():
     await dp.start_polling(bot)
 
