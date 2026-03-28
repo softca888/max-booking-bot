@@ -1,10 +1,9 @@
-import os
 import logging
 from maxapi import Bot, Dispatcher
-from maxapi.types import BotStarted, MessageCreated
 
-MAX_BOT_TOKEN = os.getenv("MAX_BOT_TOKEN")
-bot = Bot(MAX_BOT_TOKEN)
+TOKEN = "f9LHodD0cOLLWCc_Hvywa6caaHTk8fTLJ31WdQE-tBap9zd-6NUXQ7QA19xz5K8VrJcsMnbnNj8VNvxJJ6TH"
+
+bot = Bot(TOKEN)
 dp = Dispatcher()
 
 logging.basicConfig(level=logging.INFO)
@@ -12,7 +11,7 @@ logging.basicConfig(level=logging.INFO)
 user_data = {}
 
 @dp.bot_started()
-async def on_start(event: BotStarted):
+async def on_start(event):
     keyboard = {
         "inline_keyboard": [[{
             "text": "🚗 ЗАБРОНИРОВАТЬ АВТО",
@@ -26,10 +25,9 @@ async def on_start(event: BotStarted):
     )
 
 @dp.message_created()
-async def handle_message(event: MessageCreated):
+async def handle_message(event):
     uid = event.from_user.id
     
-    # Обработка команды /start
     if event.message.text == "/start":
         keyboard = {
             "inline_keyboard": [[{
@@ -43,7 +41,6 @@ async def handle_message(event: MessageCreated):
         )
         return
     
-    # Если пользователь в процессе бронирования
     if uid in user_data:
         step = user_data[uid].get("step")
         if step == "name":
@@ -55,7 +52,6 @@ async def handle_message(event: MessageCreated):
             await event.message.answer("✅ Заявка принята! Менеджер свяжется с вами.")
             del user_data[uid]
 
-# Обработка нажатий на кнопки
 @dp.callback_query_handler()
 async def handle_callback(callback):
     if callback.data == "book_car":
