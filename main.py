@@ -1,13 +1,11 @@
 import os
 import logging
-from fastapi import FastAPI, Request
 from maxapi import Bot, Dispatcher
 from maxapi.types import BotStarted, MessageCreated
 
 MAX_BOT_TOKEN = os.getenv("MAX_BOT_TOKEN")
 bot = Bot(MAX_BOT_TOKEN)
 dp = Dispatcher()
-app = FastAPI()
 
 logging.basicConfig(level=logging.INFO)
 
@@ -62,16 +60,10 @@ async def get_info(event: MessageCreated):
         await event.message.answer("✅ Заявка принята! Менеджер свяжется с вами.")
         del user_data[uid]
 
-@app.post("/webhook/max")
-async def max_webhook(request: Request):
-    data = await request.json()
-    await dp.feed_update(bot, data)
-    return {"ok": True}
-
-@app.get("/health")
-async def health():
-    return {"status": "ok"}
+# Запуск через polling (без вебхука)
+async def main():
+    await dp.start_polling(bot)
 
 if __name__ == "__main__":
-    import uvicorn
-    uvicorn.run(app, host="0.0.0.0", port=8080)
+    import asyncio
+    asyncio.run(main())
