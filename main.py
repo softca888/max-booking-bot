@@ -27,8 +27,9 @@ async def on_start(event):
 @dp.message_created()
 async def handle_message(event):
     uid = event.from_user.id
+    text = event.message.text
     
-    if event.message.text == "/start":
+    if text == "/start":
         keyboard = {
             "inline_keyboard": [[{
                 "text": "🚗 ЗАБРОНИРОВАТЬ АВТО",
@@ -41,22 +42,25 @@ async def handle_message(event):
         )
         return
     
+    # Обработка callback'ов
+    if hasattr(event, 'callback_query'):
+        callback = event.callback_query
+        if callback.data == "book_car":
+            user_data[callback.from_user.id] = {"step": "name"}
+            await callback.message.edit_text("Введите ваше ФИО:")
+        return
+    
+    # Обычные сообщения
     if uid in user_data:
         step = user_data[uid].get("step")
         if step == "name":
-            user_data[uid]["name"] = event.message.text
+            user_data[uid]["name"] = text
             user_data[uid]["step"] = "phone"
             await event.message.answer("Введите номер телефона:")
         elif step == "phone":
-            user_data[uid]["phone"] = event.message.text
+            user_data[uid]["phone"] = text
             await event.message.answer("✅ Заявка принята! Менеджер свяжется с вами.")
             del user_data[uid]
-
-@dp.callback_query_handler()
-async def handle_callback(callback):
-    if callback.data == "book_car":
-        user_data[callback.from_user.id] = {"step": "name"}
-        await callback.message.edit_text("Введите ваше ФИО:")
 
 async def main():
     await dp.start_polling(bot)
